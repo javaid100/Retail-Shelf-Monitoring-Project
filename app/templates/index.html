@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>YOLOv8 Multi-Image & Video Detection & Shelf Report</title>
+<style>
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f4f8; color: #222; margin: 0; padding: 20px; }
+  h1 { text-align: center; margin-bottom: 30px; color: #0d47a1; }
+  .container { max-width: 1200px; margin: 0 auto; display: flex; gap: 40px; flex-wrap: wrap; }
+  .panel { background: white; border-radius: 10px; padding: 20px 25px; box-shadow: 0 4px 15px rgb(0 0 0 / 0.1); margin-bottom: 30px; flex: 1 1 400px; }
+  h2 { text-align: center; margin-bottom: 20px; color: #0d47a1; }
+  .slider-group { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+  .slider-group label { flex: 1 1 130px; font-weight: 600; font-size: 15px; color: #333; }
+  .slider-group input[type=range] { flex: 1 1 120px; margin: 0 12px; cursor: pointer; }
+  .slider-value { width: 30px; font-weight: 600; color: #0d47a1; text-align: center; }
+  .btn-update { display: block; width: 100%; background-color: #0d47a1; color: white; font-size: 16px; padding: 12px 0; border: none; border-radius: 8px; cursor: pointer; margin-top: 25px; transition: background-color 0.3s ease; }
+  .btn-update:hover { background-color: #084c8d; }
+  form.upload-form { margin-bottom: 30px; display: flex; gap: 15px; justify-content: center; align-items: center; flex-wrap: wrap; }
+  form.upload-form input[type="file"] { cursor: pointer; }
+  form.upload-form input[type="submit"] { background-color: #0d47a1; border: none; color: white; padding: 10px 25px; font-size: 16px; border-radius: 8px; cursor: pointer; transition: background-color 0.3s ease; }
+  form.upload-form input[type="submit"]:hover { background-color: #084c8d; }
+  .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; margin-bottom: 40px; }
+  .image-card { background: #fafafa; border-radius: 10px; box-shadow: 0 3px 10px rgb(0 0 0 / 0.12); padding: 15px; text-align: center; }
+  .image-card img { max-width: 100%; border-radius: 10px; box-shadow: 0 3px 12px rgb(0 0 0 / 0.15); margin-bottom: 15px; }
+  .image-card table { margin: 0 auto; border-collapse: collapse; width: 90%; font-size: 14px; }
+  .image-card th, .image-card td { border: 1px solid #ddd; padding: 6px 8px; text-align: center; }
+  .image-card th { background-color: #0d47a1; color: white; }
+  table.shelf-report { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+  table.shelf-report, table.shelf-report th, table.shelf-report td { border: 1px solid #ddd; }
+  table.shelf-report th, table.shelf-report td { padding: 12px 10px; text-align: center; }
+  table.shelf-report th { background-color: #0d47a1; color: white; }
+  table.shelf-report tr:nth-child(even) { background-color: #f6f9ff; }
+  .status-ok { color: green; font-weight: 700; }
+  .status-below { color: #d32f2f; font-weight: 700; }
+  .status-out { color: #757575; font-style: italic; }
+  @media (max-width: 900px) { .container { flex-direction: column; } .panel { flex: 1 1 100%; } }
+</style>
+</head>
+<body>
+
+<h1>AI-Powered Autonomous Retail Shelf Monitoring System</h1>
+
+<div class="container">
+  <div class="panel">
+    <h2>Adjust Stock Thresholds</h2>
+    <form method="POST" id="thresholds-form">
+      {% for product, val in thresholds.items() %}
+      <div class="slider-group">
+        <label for="threshold_{{ loop.index }}">{{ product }}</label>
+        <input type="range" min="0" max="10" step="1" id="threshold_{{ loop.index }}" name="threshold_{{ product }}" value="{{ val }}" oninput="document.getElementById('val_{{ loop.index }}').textContent = this.value" />
+        <div class="slider-value" id="val_{{ loop.index }}">{{ val }}</div>
+      </div>
+      {% endfor %}
+      <button type="submit" name="set_thresholds" class="btn-update">Update Thresholds & Clear Images</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Upload Images for Detection</h2>
+    <form method="POST" enctype="multipart/form-data" class="upload-form" action="/">
+      {% for product, val in thresholds.items() %}
+        <input type="hidden" name="threshold_{{ product }}" value="{{ val }}">
+      {% endfor %}
+      <input type="file" name="images" accept="image/*" multiple required />
+      <input type="submit" value="Upload and Detect" />
+    </form>
+
+    <h2>Upload Video for Detection</h2>
+    <form method="POST" enctype="multipart/form-data" class="upload-form" action="/upload_video">
+      <input type="file" name="video" accept="video/*" required />
+      <input type="submit" value="Upload and Process Video" />
+    </form>
+  </div>
+</div>
+
+{% if images_results %}
+<div class="container">
+  <div class="panel" style="flex: 1 1 100%;">
+    <h2>Image Detection Results</h2>
+    <div class="gallery">
+      {% for img_res in images_results %}
+      <div class="image-card">
+        <img src="{{ img_res.img_url }}" alt="Result image {{ loop.index }}" />
+        <table>
+          <thead>
+            <tr><th>Product</th><th>Count</th><th>Avg Confidence</th></tr>
+          </thead>
+          <tbody>
+            {% for item in img_res.detections %}
+            <tr>
+              <td>{{ item.product }}</td>
+              <td>{{ item.count }}</td>
+              <td>{{ "%.2f"|format(item.avg_confidence) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endfor %}
+    </div>
+
+    <h2>Consolidated Shelf Status Report</h2>
+    <table class="shelf-report">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Total Count</th>
+          <th>Average Confidence</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in consolidated_report %}
+        <tr>
+          <td>{{ row.product }}</td>
+          <td>{{ row.total_count }}</td>
+          <td>{{ "%.2f"|format(row.avg_confidence) }}</td>
+          <td class="
+            {% if row.status == 'OK' %}status-ok
+            {% elif row.status == 'Below Threshold' %}status-below
+            {% else %}status-out
+            {% endif %}
+          ">{{ row.status }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if video_url %}
+<div class="container">
+  <div class="panel" style="flex: 1 1 100%;">
+    <h2>Processed Video Result</h2>
+    <video width="720" height="480" controls>
+      <source src="{{ video_url }}" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+  </div>
+</div>
+{% endif %}
+
+</body>
+</html>

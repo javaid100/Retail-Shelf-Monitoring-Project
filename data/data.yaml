@@ -1,0 +1,20 @@
+names:
+- 4D_medical_face-mask
+- Let-green_alcohol_wipes
+- X-men
+- aquafina
+- cart
+- life-buoy
+- luong_kho
+- milo
+- teppy_orange_juice
+nc: 9
+roboflow:
+  license: CC BY 4.0
+  project: retail-product-checkout
+  url: https://universe.roboflow.com/cdio-zmfmj/retail-product-checkout/dataset/35
+  version: 35
+  workspace: cdio-zmfmj
+test: ../test/images
+train: data/Retail-Product-Checkout-35/train/images
+val: data/Retail-Product-Checkout-35/valid/images
