@@ -26,12 +26,9 @@ Retail-Shelf-Monitoring-Project/
 │   ├── yolov8n_best.pt  
 │   ├── yolov8s_best.pt  
 │   └── yolov8m_best.pt  
-├── venv/  
 ├── Dockerfile  
 ├── run.py  
-├── requirements.txt  
-├── task-definition.json  
-└── trust-policy.json  
+├── requirements.txt   
 
 ## Features
 - Automated shelf monitoring using YOLOv8 models
