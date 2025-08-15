@@ -1,21 +1,11 @@
 """
-Refactored, modular single-file implementation of the
-AI-Powered Autonomous Retail Shelf Monitoring System.
+AI-Powered Autonomous Retail Shelf Monitoring System
 
 Goals:
 - Preserve original logic and behavior while improving structure.
 - Add clear sections, reusable functions, and safer I/O handling.
 - Keep training/benchmarking/inference/Flask app features in one file.
 - Provide optional CLI switches to run specific stages.
-
-NOTE:
-- Roboflow API key is read from env ROB0FLOW_API_KEY if available, otherwise
-  falls back to the literal key present in the original snippet (not recommended).
-- Paths and behaviors mirror the original as closely as possible.
-- Visualization calls (matplotlib) are kept, but guarded so they run only when selected.
-- The HTML template and stock logic are unchanged in spirit.
-- Minor typos from the original (e.g., "val" vs. "valid") are preserved to avoid
-  altering dataset mapping logic. You may correct them locally if desired.
 
 Usage examples:
     python retail_shelf_monitor.py --stage all
@@ -27,7 +17,6 @@ Usage examples:
     python retail_shelf_monitor.py --stage dockerfile
 
 """
-from __future__ import annotations
 
 # ==== Imports and Setup =======================================================
 import os
